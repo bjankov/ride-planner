@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Route> Routes { get; set; }
     public DbSet<Location> Locations { get; set; }
     public DbSet<RideMessage> RideMessages { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

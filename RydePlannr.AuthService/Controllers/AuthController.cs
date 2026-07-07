@@ -19,15 +19,31 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register(
         RegisterDto dto, CancellationToken cancellationToken)
     {
-        var token = await _authService.RegisterAsync(dto, cancellationToken);
-        return Ok(new { Token = token });
+        var result = await _authService.RegisterAsync(dto, cancellationToken);
+        return Ok(result);
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(
         LoginDto dto, CancellationToken cancellationToken)
     {
-        var token = await _authService.LoginAsync(dto, cancellationToken);
-        return Ok(new { Token = token });
+        var result = await _authService.LoginAsync(dto, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(
+        RefreshRequestDto dto, CancellationToken cancellationToken)
+    {
+        var result = await _authService.RefreshAsync(dto, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(
+        RefreshRequestDto dto, CancellationToken cancellationToken)
+    {
+        await _authService.RevokeAsync(dto, cancellationToken);
+        return NoContent();
     }
 }

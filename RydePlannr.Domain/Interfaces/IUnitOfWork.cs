@@ -10,6 +10,7 @@ public interface IUnitOfWork
     IClubRepository Clubs { get; }
     IRouteRepository Routes { get; }
     IRideMessageRepository Messages { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -17,6 +17,7 @@ public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
     private readonly Lazy<IClubRepository> _clubs = new(() => new ClubRepository(context));
     private readonly Lazy<IRouteRepository> _routes = new(() => new RouteRepository(context));
     private readonly Lazy<IRideMessageRepository> _messages = new(() => new RideMessageRepository(context));
+    private readonly Lazy<IRefreshTokenRepository> _refreshTokens = new(() => new RefreshTokenRepository(context));
 
     public IRideRepository Rides => _rides.Value;
     public IUserRepository Users => _users.Value;
@@ -24,6 +25,7 @@ public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
     public IClubRepository Clubs => _clubs.Value;
     public IRouteRepository Routes => _routes.Value;
     public IRideMessageRepository Messages => _messages.Value;
+    public IRefreshTokenRepository RefreshTokens => _refreshTokens.Value;
 
     public IGenericRepository<TEntity> Repository<TEntity>() where TEntity : class
     {
@@ -58,6 +60,7 @@ public class UnitOfWork(ApplicationDbContext context) : IUnitOfWork
         "IX_Users_Username" => "Username",
         "IX_RideParticipants_RideEventId_UserId" => "Participant",
         "IX_ClubMembers_UserId_ClubId" => "Membership",
+        "IX_RefreshTokens_TokenHash" => "RefreshToken",
         _ => constraintName ?? "Unknown"
     };
 }
