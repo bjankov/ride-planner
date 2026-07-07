@@ -1,0 +1,6 @@
+@RydePlannr_HostAddress = http://localhost:5120
+
+GET {{RydePlannr_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
