@@ -5,6 +5,7 @@ using RydePlannr.API.Extensions;
 using RydePlannr.API.Filters;
 using RydePlannr.API.Middleware;
 using RydePlannr.Application.Extensions;
+using RydePlannr.Domain.Entities;
 using RydePlannr.Infrastructure.Extensions;
 using RydePlannr.Infrastructure.Persistence;
 using Serilog;
@@ -64,6 +65,7 @@ try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.MigrateAsync();
+        await SeedAdminUserAsync(dbContext);
     }
 
     if (app.Environment.IsDevelopment())
@@ -90,4 +92,22 @@ catch (Exception ex)
 finally
 {
     await Log.CloseAndFlushAsync();
+}
+
+static async Task SeedAdminUserAsync(ApplicationDbContext dbContext)
+{
+    const string adminEmail = "admin@ride-planner.com";
+
+    if (await dbContext.Users.AnyAsync(u => u.Email == adminEmail))
+        return;
+
+    dbContext.Users.Add(new User
+    {
+        Username = "admin",
+        Email = adminEmail,
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin1!"),
+        RoleId = RoleIds.Admin
+    });
+
+    await dbContext.SaveChangesAsync();
 }
