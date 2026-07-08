@@ -6,6 +6,7 @@ using RydePlannr.API.Filters;
 using RydePlannr.API.Middleware;
 using RydePlannr.Application.Extensions;
 using RydePlannr.Domain.Entities;
+using RydePlannr.Domain.Interfaces;
 using RydePlannr.Infrastructure.Extensions;
 using RydePlannr.Infrastructure.Persistence;
 using Serilog;
@@ -70,7 +71,9 @@ try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.MigrateAsync();
-        await SeedAdminUserAsync(dbContext);
+
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        await SeedAdminUserAsync(unitOfWork);
     }
 
     if (app.Environment.IsDevelopment())
@@ -101,20 +104,21 @@ finally
     await Log.CloseAndFlushAsync();
 }
 
-static async Task SeedAdminUserAsync(ApplicationDbContext dbContext)
+static async Task SeedAdminUserAsync(IUnitOfWork unitOfWork)
 {
     const string adminEmail = "admin@ride-planner.com";
 
-    if (await dbContext.Users.AnyAsync(u => u.Email == adminEmail))
+    if (await unitOfWork.Users.EmailExistsAsync(adminEmail))
         return;
 
-    dbContext.Users.Add(new User
+    var admin = new User
     {
         Username = "admin",
         Email = adminEmail,
         PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin1!"),
         RoleId = RoleIds.Admin
-    });
+    };
 
-    await dbContext.SaveChangesAsync();
+    await unitOfWork.Users.AddAsync(admin);
+    await unitOfWork.SaveChangesAsync();
 }
