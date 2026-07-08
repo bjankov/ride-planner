@@ -41,6 +41,11 @@ try
     builder.Services.AddApplication();
     builder.Services.AddSwaggerWithJwt();
 
+    // Dev-only: lets the local api-tester frontend (opened via file:// or a static server)
+    // call this API from the browser. Not used for anything internet-facing.
+    builder.Services.AddCors(options =>
+        options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
         {
@@ -77,6 +82,8 @@ try
     app.UseMiddleware<ExceptionHandlingMiddleware>();
     app.UseMiddleware<LoggingMiddleware>();
     app.UseSerilogRequestLogging();
+
+    app.UseCors();
 
     app.UseAuthentication();
     app.UseAuthorization();

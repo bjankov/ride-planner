@@ -34,6 +34,11 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddAuthServices();
 
+    // Dev-only: lets the local api-tester frontend (opened via file:// or a static server)
+    // call this service from the browser. Not used for anything internet-facing.
+    builder.Services.AddCors(options =>
+        options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+
     builder.Services.AddSwaggerGen(options =>
     {
         options.SwaggerDoc("v1", new OpenApiInfo
@@ -54,6 +59,8 @@ try
 
     app.UseMiddleware<ExceptionHandlingMiddleware>();
     app.UseSerilogRequestLogging();
+
+    app.UseCors();
 
     app.MapControllers();
 

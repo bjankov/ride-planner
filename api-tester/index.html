@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RydePlannr API Tester</title>
+<style>
+  :root {
+    --bg: #ffffff; --bg-alt: #f6f7f9; --bg-alt2: #eef0f3;
+    --text: #1c1f24; --text-dim: #565d68;
+    --border: #e2e5ea;
+    --accent: #2b5fd9; --accent-soft: #eaf0ff;
+    --code-bg: #1c1f24; --code-text: #e8eaed;
+    --ok: #1f9d55; --ok-bg: #e9f9ef;
+    --err: #d0392b; --err-bg: #fdecea;
+    --warn: #b9770e; --warn-bg: #fff6e5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a; --bg-alt: #1b1e24; --bg-alt2: #21252c;
+      --text: #e7e9ec; --text-dim: #9aa1ac;
+      --border: #2b2f37;
+      --accent: #7ea2ff; --accent-soft: #1c2740;
+      --code-bg: #0d0f12; --code-text: #d8dde3;
+      --ok: #3ecb75; --ok-bg: #123420;
+      --err: #ef6156; --err-bg: #3a1917;
+      --warn: #e0a83f; --warn-bg: #3a2c10;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a; --bg-alt: #1b1e24; --bg-alt2: #21252c;
+    --text: #e7e9ec; --text-dim: #9aa1ac; --border: #2b2f37;
+    --accent: #7ea2ff; --accent-soft: #1c2740;
+    --code-bg: #0d0f12; --code-text: #d8dde3;
+    --ok: #3ecb75; --ok-bg: #123420; --err: #ef6156; --err-bg: #3a1917;
+    --warn: #e0a83f; --warn-bg: #3a2c10;
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --bg-alt: #f6f7f9; --bg-alt2: #eef0f3;
+    --text: #1c1f24; --text-dim: #565d68; --border: #e2e5ea;
+    --accent: #2b5fd9; --accent-soft: #eaf0ff;
+    --code-bg: #1c1f24; --code-text: #e8eaed;
+    --ok: #1f9d55; --ok-bg: #e9f9ef; --err: #d0392b; --err-bg: #fdecea;
+    --warn: #b9770e; --warn-bg: #fff6e5;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    display: flex; flex-direction: column;
+  }
+  code, textarea, input, .mono { font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; }
+
+  header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg-alt);
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 15px; margin: 0; white-space: nowrap; }
+  header .cfg { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); }
+  header .cfg input { width: 190px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 12px; }
+  header .spacer { flex: 1; }
+
+  .authbar { display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+  .authbar .pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 10px; border-radius: 999px; background: var(--bg-alt2); border: 1px solid var(--border);
+  }
+  .authbar .pill.on { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .authbar .pill.off { color: var(--text-dim); }
+  .authbar button.small {
+    font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); cursor: pointer;
+  }
+  .authbar button.small:hover { background: var(--bg-alt2); }
+
+  .layout { flex: 1; display: flex; min-height: 0; }
+
+  nav.sidebar {
+    width: 250px; flex-shrink: 0; overflow-y: auto; border-right: 1px solid var(--border); background: var(--bg-alt);
+    padding: 8px 0 40px;
+  }
+  nav.sidebar .group-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim);
+    padding: 14px 14px 6px;
+  }
+  nav.sidebar button.ep {
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+    border: none; background: none; color: var(--text); padding: 6px 14px; cursor: pointer; font-size: 13px;
+  }
+  nav.sidebar button.ep:hover { background: var(--accent-soft); }
+  nav.sidebar button.ep.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  nav.sidebar .m {
+    font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; width: 40px; text-align: center; flex-shrink: 0;
+  }
+  .m.GET { background: #1f9d5522; color: var(--ok); }
+  .m.POST { background: #2b5fd922; color: var(--accent); }
+  .m.PUT { background: #b9770e22; color: var(--warn); }
+  .m.DELETE { background: #d0392b22; color: var(--err); }
+  nav.sidebar .lockicon { font-size: 10px; opacity: 0.6; }
+
+  main.content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .panes { flex: 1; display: flex; min-height: 0; border-bottom: 1px solid var(--border); }
+  .pane { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 14px 16px; overflow-y: auto; }
+  .pane + .pane { border-left: 1px solid var(--border); }
+  .pane h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
+
+  .req-line { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .req-line .m { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
+  .req-line .url { font-size: 13px; word-break: break-all; color: var(--text-dim); }
+  .note { font-size: 12px; color: var(--text-dim); background: var(--bg-alt2); border-radius: 6px; padding: 8px 10px; margin-bottom: 12px; }
+  .note.warn { background: var(--warn-bg); color: var(--warn); }
+
+  .params { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .params label { font-size: 12px; color: var(--text-dim); display: block; margin-bottom: 3px; }
+  .params input {
+    width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--bg); color: var(--text); font-size: 13px;
+  }
+
+  textarea.body {
+    flex: 1; min-height: 140px; width: 100%; resize: vertical;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--code-bg); color: var(--code-text); font-size: 12.5px; line-height: 1.5;
+  }
+
+  .send-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  button.send {
+    background: var(--accent); color: white; border: none; padding: 9px 20px; border-radius: 7px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  button.send:hover { opacity: 0.9; }
+  button.send:disabled { opacity: 0.5; cursor: default; }
+  .timing { font-size: 12px; color: var(--text-dim); }
+
+  .status-badge { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
+  .status-2xx { background: var(--ok-bg); color: var(--ok); }
+  .status-4xx { background: var(--err-bg); color: var(--err); }
+  .status-5xx { background: var(--err-bg); color: var(--err); }
+  .status-0 { background: var(--bg-alt2); color: var(--text-dim); }
+
+  pre.resp {
+    flex: 1; margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--code-bg); color: var(--code-text);
+    font-size: 12.5px; line-height: 1.5; overflow: auto; white-space: pre-wrap; word-break: break-word;
+  }
+  .empty-hint { color: var(--text-dim); font-size: 13px; padding: 20px 0; }
+
+  .history { height: 190px; flex-shrink: 0; display: flex; flex-direction: column; background: var(--bg-alt); }
+  .history h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin: 0; padding: 10px 16px 6px; }
+  .history .list { flex: 1; overflow-y: auto; }
+  .history-row {
+    display: flex; align-items: center; gap: 10px; padding: 6px 16px; font-size: 12.5px; cursor: pointer; border-bottom: 1px solid var(--border);
+  }
+  .history-row:hover { background: var(--accent-soft); }
+  .history-row .time { color: var(--text-dim); width: 68px; flex-shrink: 0; }
+  .history-row .m { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; width: 40px; text-align: center; flex-shrink: 0; }
+  .history-row .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-row .st { font-weight: 700; width: 34px; text-align: right; flex-shrink: 0; }
+  .history-row .st.s2 { color: var(--ok); }
+  .history-row .st.s4, .history-row .st.s5 { color: var(--err); }
+  .history-empty { padding: 16px; color: var(--text-dim); font-size: 12.5px; }
+  .history .clear { font-size: 11px; color: var(--text-dim); background: none; border: none; cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚲 RydePlannr API Tester</h1>
+  <div class="cfg">API <input id="apiBase" value="http://localhost:5080"></div>
+  <div class="cfg">Auth <input id="authBase" value="http://localhost:5081"></div>
+  <div class="spacer"></div>
+  <div class="authbar">
+    <div id="authPill" class="pill off">Not authenticated</div>
+    <button class="small" id="clearAuthBtn">Clear tokens</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar"></nav>
+
+  <main class="content">
+    <div class="panes">
+      <section class="pane" id="requestPane">
+        <h2>Request</h2>
+        <div class="empty-hint">Pick an endpoint on the left to get started.</div>
+      </section>
+      <section class="pane" id="responsePane">
+        <h2>Response</h2>
+        <div class="empty-hint">Nothing sent yet.</div>
+      </section>
+    </div>
+
+    <div class="history">
+      <h2>History <button class="clear" id="clearHistoryBtn">clear</button></h2>
+      <div class="list" id="historyList"><div class="history-empty">No requests yet this session.</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ---------- Endpoint catalogue ---------- */
+const ENDPOINTS = [
+  // --- Auth ---
+  { id: 'auth-register', group: 'Auth', name: 'Register', method: 'POST', base: 'auth', path: '/api/auth/register', auth: false,
+    body: { username: 'testrider', email: 'testrider@example.com', password: 'Passw0rd!' } },
+  { id: 'auth-login', group: 'Auth', name: 'Login', method: 'POST', base: 'auth', path: '/api/auth/login', auth: false,
+    body: { email: 'testrider@example.com', password: 'Passw0rd!' } },
+  { id: 'auth-refresh', group: 'Auth', name: 'Refresh', method: 'POST', base: 'auth', path: '/api/auth/refresh', auth: false,
+    body: { refreshToken: '' }, note: 'Auto-filled from the stored refresh token once you log in.' },
+  { id: 'auth-logout', group: 'Auth', name: 'Logout', method: 'POST', base: 'auth', path: '/api/auth/logout', auth: false,
+    body: { refreshToken: '' }, note: 'Auto-filled from the stored refresh token. Revokes it server-side and clears local auth state on success.' },
+
+  // --- Users ---
+  { id: 'users-get', group: 'Users', name: 'Get user by id', method: 'GET', base: 'api', path: '/api/users/{id}', auth: true,
+    note: 'Returns the full profile (with email) only if you\'re viewing yourself or are Admin; otherwise a public profile.' },
+  { id: 'users-all', group: 'Users', name: 'Get all users', method: 'GET', base: 'api', path: '/api/users', auth: true, note: 'Admin role required.' },
+  { id: 'users-delete', group: 'Users', name: 'Delete user', method: 'DELETE', base: 'api', path: '/api/users/{id}', auth: true, note: 'Admin role required.' },
+
+  // --- Clubs ---
+  { id: 'clubs-all', group: 'Clubs', name: 'Get all clubs', method: 'GET', base: 'api', path: '/api/clubs', auth: false },
+  { id: 'clubs-get', group: 'Clubs', name: 'Get club by id', method: 'GET', base: 'api', path: '/api/clubs/{id}', auth: false },
+  { id: 'clubs-members', group: 'Clubs', name: 'Get club members', method: 'GET', base: 'api', path: '/api/clubs/{id}/members', auth: false },
+  { id: 'clubs-rides', group: 'Clubs', name: 'Get club ride events', method: 'GET', base: 'api', path: '/api/clubs/{id}/rideevents', auth: false },
+  { id: 'clubs-create', group: 'Clubs', name: 'Create club', method: 'POST', base: 'api', path: '/api/clubs', auth: true,
+    body: { name: 'Zagreb Cycling Club', description: 'Weekend group rides around Zagreb' } },
+  { id: 'clubs-join', group: 'Clubs', name: 'Join club', method: 'POST', base: 'api', path: '/api/clubs/{id}/join', auth: true, note: 'You can only be an active member of one club at a time.' },
+  { id: 'clubs-leave', group: 'Clubs', name: 'Leave club', method: 'DELETE', base: 'api', path: '/api/clubs/{id}/leave', auth: true },
+  { id: 'clubs-delete', group: 'Clubs', name: 'Delete club', method: 'DELETE', base: 'api', path: '/api/clubs/{id}', auth: true, note: 'Admin role required.' },
+
+  // --- Locations ---
+  { id: 'locations-all', group: 'Locations', name: 'Get all locations', method: 'GET', base: 'api', path: '/api/locations', auth: false },
+  { id: 'locations-get', group: 'Locations', name: 'Get location by id', method: 'GET', base: 'api', path: '/api/locations/{id}', auth: false },
+  { id: 'locations-create', group: 'Locations', name: 'Create location', method: 'POST', base: 'api', path: '/api/locations', auth: true,
+    body: { name: 'Ban Jelačić Square', latitude: 45.8131, longitude: 15.9775 } },
+  { id: 'locations-delete', group: 'Locations', name: 'Delete location', method: 'DELETE', base: 'api', path: '/api/locations/{id}', auth: true, note: 'Admin role required.' },
+
+  // --- Routes ---
+  { id: 'routes-all', group: 'Routes', name: 'Get all routes', method: 'GET', base: 'api', path: '/api/routes', auth: false },
+  { id: 'routes-get', group: 'Routes', name: 'Get route by id', method: 'GET', base: 'api', path: '/api/routes/{id}', auth: false },
+  { id: 'routes-create', group: 'Routes', name: 'Create route', method: 'POST', base: 'api', path: '/api/routes', auth: true,
+    body: { name: 'Sljeme Loop', description: 'Classic climb north of the city', distanceKm: 42.5, elevationGainMeters: 850,
+      surface: 0, difficulty: 2, startLocationId: 1, endLocationId: 2 },
+    note: 'surface: 0 Paved, 1 Gravel, 2 Cobblestones, 3 Trail, 4 Mixed  •  difficulty: 0 Easy, 1 Moderate, 2 Hard, 3 Expert, 4 Professional  •  location ids must already exist.' },
+  { id: 'routes-delete', group: 'Routes', name: 'Delete route', method: 'DELETE', base: 'api', path: '/api/routes/{id}', auth: true, note: 'Admin role required.' },
+
+  // --- Ride Events ---
+  { id: 'rides-upcoming', group: 'Ride Events', name: 'Get upcoming rides', method: 'GET', base: 'api', path: '/api/rideevents', auth: false },
+  { id: 'rides-all', group: 'Ride Events', name: 'Get all rides', method: 'GET', base: 'api', path: '/api/rideevents/all', auth: false },
+  { id: 'rides-get', group: 'Ride Events', name: 'Get ride by id', method: 'GET', base: 'api', path: '/api/rideevents/{id}', auth: false },
+  { id: 'rides-create', group: 'Ride Events', name: 'Create ride event', method: 'POST', base: 'api', path: '/api/rideevents', auth: true,
+    body: { title: 'Sunday Morning Ride', description: 'Easy pace, coffee stop halfway', startTime: '2026-08-15T08:00:00Z',
+      endTime: '2026-08-15T11:00:00Z', cutoffMinutes: 30, maxParticipants: 20, routeId: 1, rideTypeId: 1, clubId: null },
+    note: 'rideTypeId: 1 Leisure, 2 Training, 3 Race, 4 Gran Fondo, 5 Night Ride, 6 Charity Ride (seeded). clubId is optional — omit or set null for a non-club ride. startTime must be in the future.' },
+  { id: 'rides-update', group: 'Ride Events', name: 'Update ride event', method: 'PUT', base: 'api', path: '/api/rideevents/{id}', auth: true,
+    body: { title: 'Sunday Morning Ride (updated)', maxParticipants: 25, status: 0 },
+    note: 'Only the organizer or an Admin can update. All fields optional — only send what you want to change. status: 0 Planned, 1 Cancelled, 2 Active, 3 Completed.' },
+  { id: 'rides-delete', group: 'Ride Events', name: 'Delete ride event', method: 'DELETE', base: 'api', path: '/api/rideevents/{id}', auth: true, note: 'Only the organizer or an Admin can delete.' },
+  { id: 'rides-join', group: 'Ride Events', name: 'Join ride', method: 'POST', base: 'api', path: '/api/rideevents/{id}/join', auth: true },
+  { id: 'rides-leave', group: 'Ride Events', name: 'Leave ride', method: 'DELETE', base: 'api', path: '/api/rideevents/{id}/leave', auth: true },
+
+  // --- Messages ---
+  { id: 'messages-all', group: 'Messages', name: 'Get messages', method: 'GET', base: 'api', path: '/api/rideevents/{rideEventId}/messages', auth: false },
+  { id: 'messages-create', group: 'Messages', name: 'Post message', method: 'POST', base: 'api', path: '/api/rideevents/{rideEventId}/messages', auth: true,
+    body: { content: 'See everyone there!' }, note: 'Only participants of the ride can post — join the ride first.' },
+];
+
+/* ---------- State ---------- */
+const state = {
+  apiBase: localStorage.getItem('rp_apiBase') || 'http://localhost:5080',
+  authBase: localStorage.getItem('rp_authBase') || 'http://localhost:5081',
+  accessToken: localStorage.getItem('rp_accessToken') || '',
+  refreshToken: localStorage.getItem('rp_refreshToken') || '',
+  history: JSON.parse(sessionStorage.getItem('rp_history') || '[]'),
+  activeEndpoint: null,
+};
+
+document.getElementById('apiBase').value = state.apiBase;
+document.getElementById('authBase').value = state.authBase;
+document.getElementById('apiBase').addEventListener('change', e => { state.apiBase = e.target.value.replace(/\/$/, ''); localStorage.setItem('rp_apiBase', state.apiBase); });
+document.getElementById('authBase').addEventListener('change', e => { state.authBase = e.target.value.replace(/\/$/, ''); localStorage.setItem('rp_authBase', state.authBase); });
+
+function decodeJwt(token) {
+  try {
+    const payload = token.split('.')[1];
+    const padded = payload.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - payload.length % 4) % 4);
+    return JSON.parse(atob(padded));
+  } catch { return null; }
+}
+
+function claimVal(claims, key) {
+  if (!claims) return null;
+  const full = Object.keys(claims).find(k => k === key || k.endsWith('/' + key));
+  return full ? claims[full] : null;
+}
+
+function setTokens(accessToken, refreshToken) {
+  state.accessToken = accessToken || '';
+  state.refreshToken = refreshToken || '';
+  localStorage.setItem('rp_accessToken', state.accessToken);
+  localStorage.setItem('rp_refreshToken', state.refreshToken);
+  renderAuthPill();
+}
+
+function clearTokens() {
+  setTokens('', '');
+}
+
+function renderAuthPill() {
+  const pill = document.getElementById('authPill');
+  if (!state.accessToken) {
+    pill.className = 'pill off';
+    pill.textContent = 'Not authenticated';
+    return;
+  }
+  const claims = decodeJwt(state.accessToken);
+  const username = claimVal(claims, 'name') || '?';
+  const role = claimVal(claims, 'role') || '?';
+  const exp = claims && claims.exp ? new Date(claims.exp * 1000) : null;
+  const expired = exp && exp.getTime() < Date.now();
+  pill.className = 'pill ' + (expired ? 'off' : 'on');
+  const mins = exp ? Math.round((exp.getTime() - Date.now()) / 60000) : '?';
+  pill.textContent = expired
+    ? `${username} (${role}) — access token expired`
+    : `${username} (${role}) — expires in ${mins}m`;
+}
+
+document.getElementById('clearAuthBtn').addEventListener('click', clearTokens);
+
+/* ---------- Sidebar ---------- */
+const sidebar = document.getElementById('sidebar');
+const groups = [...new Set(ENDPOINTS.map(e => e.group))];
+for (const group of groups) {
+  const title = document.createElement('div');
+  title.className = 'group-title';
+  title.textContent = group;
+  sidebar.appendChild(title);
+  for (const ep of ENDPOINTS.filter(e => e.group === group)) {
+    const btn = document.createElement('button');
+    btn.className = 'ep';
+    btn.dataset.id = ep.id;
+    btn.innerHTML = `<span class="m ${ep.method}">${ep.method}</span><span>${ep.name}</span>${ep.auth ? '<span class="lockicon">🔒</span>' : ''}`;
+    btn.addEventListener('click', () => selectEndpoint(ep.id));
+    sidebar.appendChild(btn);
+  }
+}
+
+/* ---------- Request pane ---------- */
+function selectEndpoint(id) {
+  state.activeEndpoint = id;
+  document.querySelectorAll('nav.sidebar .ep').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+  const ep = ENDPOINTS.find(e => e.id === id);
+  renderRequestPane(ep);
+}
+
+function paramsInPath(path) {
+  return [...path.matchAll(/\{(\w+)\}/g)].map(m => m[1]);
+}
+
+function renderRequestPane(ep) {
+  const pane = document.getElementById('requestPane');
+  const params = paramsInPath(ep.path);
+
+  let bodyDefault = '';
+  if (ep.body !== undefined) {
+    let body = { ...ep.body };
+    if (ep.id === 'auth-refresh' || ep.id === 'auth-logout') body.refreshToken = state.refreshToken || '';
+    bodyDefault = JSON.stringify(body, null, 2);
+  }
+
+  pane.innerHTML = `
+    <h2>Request</h2>
+    <div class="req-line"><span class="m ${ep.method}">${ep.method}</span><span class="url mono" id="urlPreview"></span></div>
+    ${ep.note ? `<div class="note">${ep.note}</div>` : ''}
+    ${ep.auth ? `<div class="note${state.accessToken ? '' : ' warn'}">${state.accessToken ? 'Authorization: Bearer &lt;access token&gt; will be attached automatically.' : '⚠️ This endpoint requires auth, but you have no access token yet — log in first.'}</div>` : ''}
+    ${params.length ? `<div class="params">${params.map(p => `<div><label>${p}</label><input type="text" data-param="${p}" placeholder="${p}"></div>`).join('')}</div>` : ''}
+    ${ep.body !== undefined ? `<textarea class="body" id="bodyInput">${bodyDefault}</textarea>` : ''}
+    <div class="send-row">
+      <button class="send" id="sendBtn">Send</button>
+      <span class="timing" id="timing"></span>
+    </div>
+  `;
+
+  const urlPreview = document.getElementById('urlPreview');
+  const paramInputs = [...pane.querySelectorAll('[data-param]')];
+  function updatePreview() {
+    urlPreview.textContent = buildUrl(ep, paramInputs);
+  }
+  paramInputs.forEach(inp => inp.addEventListener('input', updatePreview));
+  updatePreview();
+
+  document.getElementById('sendBtn').addEventListener('click', () => sendRequest(ep));
+}
+
+function buildUrl(ep, paramInputs) {
+  const base = ep.base === 'auth' ? state.authBase : state.apiBase;
+  let path = ep.path;
+  for (const inp of paramInputs) {
+    path = path.replace(`{${inp.dataset.param}}`, encodeURIComponent(inp.value || `{${inp.dataset.param}}`));
+  }
+  return base + path;
+}
+
+/* ---------- Sending requests ---------- */
+async function sendRequest(ep, isRetry) {
+  const pane = document.getElementById('requestPane');
+  const paramInputs = [...pane.querySelectorAll('[data-param]')];
+  const url = buildUrl(ep, paramInputs);
+  const bodyInput = document.getElementById('bodyInput');
+
+  let bodyText = null;
+  if (bodyInput) {
+    bodyText = bodyInput.value.trim();
+    if (bodyText) {
+      try { JSON.parse(bodyText); }
+      catch (e) { renderResponsePane({ error: 'Request body is not valid JSON: ' + e.message }); return; }
+    }
+  }
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (ep.auth && state.accessToken) headers['Authorization'] = 'Bearer ' + state.accessToken;
+
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+  const timingEl = document.getElementById('timing');
+  timingEl.textContent = 'Sending…';
+  const started = performance.now();
+
+  let res, responseBody, isJson = true;
+  try {
+    res = await fetch(url, {
+      method: ep.method,
+      headers,
+      body: (ep.method === 'GET' || !bodyText) ? undefined : bodyText,
+    });
+    const durationMs = Math.round(performance.now() - started);
+    const text = await res.text();
+    try { responseBody = text ? JSON.parse(text) : null; } catch { responseBody = text; isJson = false; }
+
+    // Silent refresh-and-retry once on 401, if we have a refresh token and this wasn't already a retry.
+    if (res.status === 401 && ep.auth && state.refreshToken && !isRetry) {
+      timingEl.textContent = 'Access token expired — refreshing…';
+      const refreshed = await tryAutoRefresh();
+      if (refreshed) {
+        sendBtn.disabled = false;
+        return sendRequest(ep, true);
+      }
+    }
+
+    sendBtn.disabled = false;
+    timingEl.textContent = `${durationMs} ms`;
+
+    // Capture tokens from auth endpoints.
+    if (res.ok && (ep.id === 'auth-register' || ep.id === 'auth-login' || ep.id === 'auth-refresh') && responseBody && responseBody.accessToken) {
+      setTokens(responseBody.accessToken, responseBody.refreshToken);
+    }
+    if (res.ok && ep.id === 'auth-logout') {
+      clearTokens();
+    }
+
+    renderResponsePane({ status: res.status, statusText: res.statusText, body: responseBody, isJson });
+    pushHistory({ method: ep.method, url, status: res.status, requestBody: bodyText, responseBody, isJson });
+  } catch (err) {
+    sendBtn.disabled = false;
+    timingEl.textContent = '';
+    const message = 'Network error — is the service running, and is CORS enabled? (' + err.message + ')';
+    renderResponsePane({ error: message });
+    pushHistory({ method: ep.method, url, status: 0, requestBody: bodyText, responseBody: message, isJson: false });
+  }
+}
+
+async function tryAutoRefresh() {
+  try {
+    const res = await fetch(state.authBase + '/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: state.refreshToken }),
+    });
+    if (!res.ok) { clearTokens(); return false; }
+    const body = await res.json();
+    setTokens(body.accessToken, body.refreshToken);
+    return true;
+  } catch { return false; }
+}
+
+/* ---------- Response pane ---------- */
+function renderResponsePane({ status, statusText, body, isJson, error }) {
+  const pane = document.getElementById('responsePane');
+  if (error) {
+    pane.innerHTML = `<h2>Response</h2><div class="note warn">${error}</div>`;
+    return;
+  }
+  const cls = status === 0 ? 'status-0' : status < 300 ? 'status-2xx' : status < 500 ? 'status-4xx' : 'status-5xx';
+  const pretty = isJson ? JSON.stringify(body, null, 2) : String(body);
+  pane.innerHTML = `
+    <h2>Response <span class="status-badge ${cls}">${status} ${statusText || ''}</span></h2>
+    <pre class="resp">${escapeHtml(pretty)}</pre>
+  `;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+/* ---------- History ---------- */
+function pushHistory(entry) {
+  entry.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  state.history.unshift(entry);
+  state.history = state.history.slice(0, 100);
+  sessionStorage.setItem('rp_history', JSON.stringify(state.history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!state.history.length) { list.innerHTML = '<div class="history-empty">No requests yet this session.</div>'; return; }
+  list.innerHTML = state.history.map((h, i) => {
+    const path = h.url.replace(state.apiBase, '').replace(state.authBase, '');
+    const stClass = h.status === 0 ? '' : h.status < 300 ? 's2' : h.status < 500 ? 's4' : 's5';
+    return `<div class="history-row" data-idx="${i}">
+      <span class="time">${h.time}</span>
+      <span class="m ${h.method}">${h.method}</span>
+      <span class="path">${path}</span>
+      <span class="st ${stClass}">${h.status || '—'}</span>
+    </div>`;
+  }).join('');
+  [...list.querySelectorAll('.history-row')].forEach(row => {
+    row.addEventListener('click', () => {
+      const h = state.history[Number(row.dataset.idx)];
+      renderResponsePane({ status: h.status, statusText: '', body: h.responseBody, isJson: h.isJson });
+    });
+  });
+}
+
+document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+  state.history = [];
+  sessionStorage.removeItem('rp_history');
+  renderHistory();
+});
+
+/* ---------- Init ---------- */
+renderAuthPill();
+renderHistory();
+setInterval(renderAuthPill, 15000);
+</script>
+</body>
+</html>
